@@ -106,7 +106,7 @@ public class ComplexMatrix {
                 }
             }
         }
-        //Calculating the determinant as product of the main diagonal
+        //Calculating the determinant as the product of the main diagonal
         var det = new ComplexNumber(1);
         for (int i = 0; i < this.size[0]; ++i) {
             det = ComplexArithmetic.multiply(det, m[i*this.size[0]+i]);

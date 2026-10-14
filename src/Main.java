@@ -2,11 +2,14 @@ import Complex.ComplexNumber;
 import Matrix.ComplexMatrix;
 import Matrix.MatrixArithmetic;
 
+import java.text.ParseException;
 import java.util.Scanner;
 import java.util.StringTokenizer;
+import java.util.regex.Pattern;
 
 public class Main {
     static Scanner sc = new Scanner(System.in);
+    static ComplexMatrix prev = null;
 
     public static void main(String[] args) {
         while (true) {
@@ -28,147 +31,217 @@ public class Main {
             }
         }
     }
-    static ComplexMatrix getMatrix(String label) {
+
+    static ComplexMatrix getMatrix(String label, ComplexMatrix prev) {
+        //Checking the availability of the previous res
         System.out.println("Enter matrix %s:".formatted(label));
+        if (prev != null) {
+            System.out.print("Use the previous result? (y/n) ");
+            var input = sc.nextLine();
+            if (input.equals("y")) return prev;
+            //RuntimeException in this method is used as quit marker
+            else if (input.equals("q")) throw new RuntimeException();
+        }
         int n, m;
         while (true) {
-            System.out.print("dim(%s)=".formatted(label));
-            var dim = sc.nextLine();
-            dim = dim.replace("x", " ").replace(",", " ");
-            var tk = new StringTokenizer(dim, " ");
-            if (tk.countTokens() == 2){
+            try {
+                var dim = parseDim(label);
+                m = dim[0];
+                n = dim[1];
+                break;
+            }
+            catch (RuntimeException exc) {
+                throw new RuntimeException();
+            }
+            catch (ParseException exc) {
+                System.out.println("Invalid dimensions input");
+            }
+        }
+        ComplexMatrix matrix;
+        while (true) {
+            try {
+                matrix = parseMatrix(label, m, n);
+                break;
+            }
+            catch (RuntimeException exc) {
+                throw new RuntimeException();
+            }
+            catch (ParseException exc) {
+                System.out.println("Invalid input");
+            }
+        }
+        return matrix;
+    }
+
+    private static int[] parseDim(String label) throws ParseException {
+        int n, m;
+        System.out.print("dim(%s)=".formatted(label));
+        var dim = sc.nextLine().replace("x", " ").replace(",", " ");
+        var tk = new StringTokenizer(dim, " ");
+        if (tk.countTokens() == 2) {
+            try {
                 m = Integer.parseInt(tk.nextToken());
                 n = Integer.parseInt(tk.nextToken());
-                break;
+                if (n > 0 && m > 0) return new int[] {m, n};
             }
-            else if (tk.countTokens() == 1) {
-                m = Integer.parseInt(tk.nextToken());
+            catch (Exception _) {}
+        }
+        else if (tk.countTokens() == 1) {
+            var token = tk.nextToken();
+            if (token.equals("q")) throw new RuntimeException();
+            try {
+                m = Integer.parseInt(token);
                 n = m;
-                break;
+                if (n > 0) return new int[] {m, n};
             }
-            System.out.println("Invalid dimensions input");
+            catch (Exception _) {}
         }
-        while (true) {
-            System.out.println("%s=".formatted(label));
-            var matrix = new ComplexNumber[n*m];
-            var success1 = true;
-            for (int i = 0; i < m; ++i) {
-                var row = new StringTokenizer(sc.nextLine(), " ");
-                if (row.countTokens() != n) {
-                    System.out.println("Invalid input");
-                    success1 = false;
-                    break;
-                }
-                var success2 = true;
-                for (int j = 0; j < n; ++j) {
-                    var token = row.nextToken();
-                    ComplexNumber num;
-                    if (token.matches("^[+-]?\\d+\\.?\\d*$") || token.matches("^[+-]?0?\\.\\d+$")) {
-                        num = new ComplexNumber(Double.parseDouble(token));
-                    }
-                    else if (token.matches("^[+-]?\\d+\\.?\\d*i$") || token.matches("^[+-]?0?\\.\\d+i$")) {
-                        num = new ComplexNumber(0, Double.parseDouble(token.replace("i", "")));
-                    }
-                    else if (token.equals("i")) {
-                        num = new ComplexNumber(0, 1);
-                    }
-                    else if (token.equals("-i")) {
-                        num = new ComplexNumber(0, -1);
-                    }
-                    else if (token.matches("^[+-]?\\d+\\.?\\d*\\+\\d+\\.?\\d*i$") || token.matches("^[+-]?0?\\.\\d+\\+\\d+\\.?\\d*i$") || token.matches("^[+-]?\\d+\\.?\\d*\\+0?\\.\\d+i$") || token.matches("^[+-]?0?\\.\\d+\\+0?\\.\\d+i$")) {
-                        var tk = new StringTokenizer(token, "+");
-                        var real = Double.parseDouble(tk.nextToken());
-                        var img = Double.parseDouble(tk.nextToken().replace("i", ""));
-                        num = new ComplexNumber(real, img);
-                    }
-                    else if (token.matches("^[+-]?\\d+\\.?\\d*-\\d+\\.?\\d*i$") || token.matches("^[+-]?0?\\.\\d+-\\d+\\.?\\d*i$") || token.matches("^[+-]?\\d+\\.?\\d*-0?\\.\\d+i$") || token.matches("^[+-]?0?\\.\\d+-0?\\.\\d+i$")) {
-                        var tk = new StringTokenizer(token, "-");
-                        var real = Double.parseDouble(tk.nextToken());
-                        var img = Double.parseDouble(tk.nextToken().replace("i", ""))*-1;
-                        num = new ComplexNumber(real, img);
-                    }
-                    else {
-                        System.out.println("Invalid input");
-                        success2 = false;
-                        break;
-                    }
-                    matrix[i*m+j] = num;
-                }
-                if (!success2) {
-                    success1 = false;
-                    break;
-                }
+        throw new ParseException(dim, 0);
+    }
+
+    private static ComplexMatrix parseMatrix(String label, int m, int n) throws ParseException {
+        System.out.println("%s=".formatted(label));
+        var matrix = new ComplexNumber[n*m];
+        for (int i = 0; i < m; ++i) {
+            var line = sc.nextLine();
+            var row = new StringTokenizer(line, " ");
+            if (line.equals("q")) throw new RuntimeException();
+            else if (row.countTokens() != n) {
+                throw new ParseException(line, 0);
             }
-            if (success1) return new ComplexMatrix(matrix, m, n);
+            for (int j = 0; j < n; ++j) {
+                ComplexNumber num;
+                var token = row.nextToken();
+                try {
+                    num = parseComplexNumber(token);
+                }
+                catch (ParseException exc) {
+                    throw new ParseException(token, 0);
+                }
+                matrix[i*n+j] = num;
+            }
         }
+        return new ComplexMatrix(matrix, m, n);
+    }
+
+    private static ComplexNumber parseComplexNumber(String token) throws ParseException {
+        //Complex pattern that divides token into groups using regex and ensures that all correct token formats will be parsed
+        var pattern = Pattern.compile("^(?:([+-]?\\d+(?:\\.\\d+)?)(?![di]))?(?:([+-]?(?:\\d+(?:\\.\\d+)?)?)i)?(?:([+-]\\d+(?:\\.\\d+)?)(?![di]))?$");
+        var matcher = pattern.matcher(token);
+        if (!matcher.matches()) {
+            throw new ParseException(token, 0);
+        }
+        double real = 0, img = 0;
+        if (matcher.group(1) != null) {
+            real = Double.parseDouble(matcher.group(1));
+        }
+        else if (matcher.group(3) != null) {
+            real = Double.parseDouble(matcher.group(3));
+        }
+        if (matcher.group(2) != null) {
+            if (matcher.group(2).isEmpty() || matcher.group(2).equals("+")) {
+                img = 1;
+            }
+            else if (matcher.group(2).equals("-")) {
+                img = -1;
+            }
+            else {
+                img = Double.parseDouble(matcher.group(2));
+            }
+        }
+        if (matcher.group(1) == null && matcher.group(2) == null && matcher.group(3) == null) {
+            throw new ParseException(token, 0);
+        }
+        return new ComplexNumber(real, img);
     }
 
     static void determinant() {
-        var a = getMatrix("A");
+        ComplexMatrix a;
+        try {a = getMatrix("A", prev);}
+        catch (RuntimeException exc) {System.out.println(); return;}
         try {
-            System.out.println("det(A) = %s".formatted(a.determinant()));
+            System.out.println("det(A)=%s".formatted(a.determinant()));
+            prev = null;
         }
         catch (ArithmeticException exc) {
             System.out.println(exc.getMessage());
         }
+        System.out.println();
     }
 
     static void transpose() {
-        var a = getMatrix("A");
+        ComplexMatrix a;
+        try {a = getMatrix("A", prev);}
+        catch (RuntimeException exc) {System.out.println(); return;}
         a.transpose();
         System.out.println("Transposed A:");
         System.out.println(a);
+        System.out.println();
+        //Saving the result for further calculations
+        prev = a;
     }
 
     static void add() {
-        var a = getMatrix("A");
-        var b = getMatrix("B");
+        ComplexMatrix a, b;
+        try {a = getMatrix("A", prev); b = getMatrix("B", prev);}
+        catch (RuntimeException exc) {System.out.println(); return;}
         try {
             var c = MatrixArithmetic.add(a, b);
             System.out.println("A+B=");
             System.out.println(c);
+            prev = c;
         }
         catch (ArithmeticException exc) {
             System.out.println(exc.getMessage());
         }
+        System.out.println();
     }
 
     static void subtract() {
-        var a = getMatrix("A");
-        var b = getMatrix("B");
+        ComplexMatrix a, b;
+        try {a = getMatrix("A", prev); b = getMatrix("B", prev);}
+        catch (RuntimeException exc) {System.out.println(); return;}
         try {
             var c = MatrixArithmetic.subtract(a, b);
             System.out.println("A-B=");
             System.out.println(c);
+            prev = c;
         }
         catch (ArithmeticException exc) {
             System.out.println(exc.getMessage());
         }
+        System.out.println();
     }
 
     static void multiply() {
-        var a = getMatrix("A");
-        var b = getMatrix("B");
+        ComplexMatrix a, b;
+        try {a = getMatrix("A", prev); b = getMatrix("B", prev);}
+        catch (RuntimeException exc) {System.out.println(); return;}
         try {
             var c = MatrixArithmetic.multiply(a, b);
             System.out.println("A*B=");
             System.out.println(c);
+            prev = c;
         }
         catch (ArithmeticException exc) {
             System.out.println(exc.getMessage());
         }
+        System.out.println();
     }
 
     static void divide() {
-        var a = getMatrix("A");
-        var b = getMatrix("B");
+        ComplexMatrix a, b;
+        try {a = getMatrix("A", prev); b = getMatrix("B", prev);}
+        catch (RuntimeException exc) {System.out.println(); return;}
         try {
             var c = MatrixArithmetic.divide(a, b);
             System.out.println("A/B=");
             System.out.println(c);
+            prev = c;
         }
         catch (ArithmeticException exc) {
             System.out.println(exc.getMessage());
         }
+        System.out.println();
     }
 }
