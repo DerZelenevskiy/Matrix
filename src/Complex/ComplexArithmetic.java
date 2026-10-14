@@ -9,7 +9,7 @@ public class ComplexArithmetic {
             sumImg += num.img();
         }
         return new ComplexNumber(sumReal, sumImg);
-    };
+    }
 
     public static ComplexNumber subtract(ComplexNumber a, ComplexNumber b) {
         return new ComplexNumber(a.real() - b.real(), a.img() - b.img());
@@ -30,5 +30,9 @@ public class ComplexArithmetic {
     public static ComplexNumber divide(ComplexNumber a, ComplexNumber b) {
         var absB = b.real()*b.real() + b.img()*b.img();
         return new ComplexNumber((a.real()*b.real() + a.img()*b.img()) / absB, (a.img()*b.real() - a.real()*b.img()) / absB);
+    }
+
+    public static double abs(ComplexNumber num) {
+        return Math.sqrt(num.real()*num.real() + num.img()*num.img());
     }
 }
