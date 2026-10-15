@@ -1,4 +1,4 @@
-package Complex;
+package complex;
 
 public class ComplexArithmetic {
     public static ComplexNumber add(ComplexNumber ... nums) {

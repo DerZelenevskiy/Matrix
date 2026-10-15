@@ -1,7 +1,7 @@
-package Matrix;
+package matrix;
 
-import Complex.ComplexArithmetic;
-import Complex.ComplexNumber;
+import complex.ComplexArithmetic;
+import complex.ComplexNumber;
 
 public class MatrixArithmetic {
     public static ComplexMatrix add(ComplexMatrix ... matrices) {

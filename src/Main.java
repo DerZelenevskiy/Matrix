@@ -1,6 +1,6 @@
-import Complex.ComplexNumber;
-import Matrix.ComplexMatrix;
-import Matrix.MatrixArithmetic;
+import complex.ComplexNumber;
+import matrix.ComplexMatrix;
+import matrix.MatrixArithmetic;
 
 import java.text.ParseException;
 import java.util.Scanner;
@@ -8,7 +8,7 @@ import java.util.StringTokenizer;
 import java.util.regex.Pattern;
 
 public class Main {
-    static Scanner sc = new Scanner(System.in);
+    static final Scanner sc = new Scanner(System.in);
     static ComplexMatrix prev = null;
 
     public static void main(String[] args) {
@@ -125,32 +125,50 @@ public class Main {
     }
 
     private static ComplexNumber parseComplexNumber(String token) throws ParseException {
-        //Complex pattern that divides token into groups using regex and ensures that all correct token formats will be parsed
-        var pattern = Pattern.compile("^(?:([+-]?\\d+(?:\\.\\d+)?)(?![di]))?(?:([+-]?(?:\\d+(?:\\.\\d+)?)?)i)?(?:([+-]\\d+(?:\\.\\d+)?)(?![di]))?$");
-        var matcher = pattern.matcher(token);
-        if (!matcher.matches()) {
+        //Checks match for img part first then for real part in remaining string
+        var realPattern = Pattern.compile("[+-]?\\d*\\.\\d+|[+-]?\\d+");
+        var imgPattern = Pattern.compile("[+-]?\\d*\\.\\d+i|[+-]?\\d+i|[+-]?i");
+        var imgMatcher = imgPattern.matcher(token);
+        String realPart = "", imgPart = "", substring = token;
+        if (imgMatcher.find()) {
+            imgPart = imgMatcher.group();
+            substring = token.substring(0, imgMatcher.start()) + token.substring(imgMatcher.end());
+        }
+        var realMatcher = realPattern.matcher(substring);
+        if (realMatcher.find()) {
+            realPart = realMatcher.group();
+        }
+        //Validates if two parts concatenate into token with [+-] between them
+        boolean validator = false;
+        if (!realPart.isEmpty() && !imgPart.isEmpty()) {
+            validator = (token.equals(realPart+imgPart) && (imgPart.startsWith("+") || imgPart.startsWith("-"))) ||
+                    (token.equals(imgPart+realPart) && (realPart.startsWith("+") || realPart.startsWith("-")));
+        }
+        else if (!realPart.isEmpty()) {
+            validator = token.equals(realPart);
+        }
+        else if (!imgPart.isEmpty()) {
+            validator = token.equals(imgPart);
+        }
+        if (!validator) {
             throw new ParseException(token, 0);
         }
+        //Parsing real and img parts separately
         double real = 0, img = 0;
-        if (matcher.group(1) != null) {
-            real = Double.parseDouble(matcher.group(1));
+        if (!realPart.isEmpty()) {
+            real = Double.parseDouble(realPart);
         }
-        else if (matcher.group(3) != null) {
-            real = Double.parseDouble(matcher.group(3));
-        }
-        if (matcher.group(2) != null) {
-            if (matcher.group(2).isEmpty() || matcher.group(2).equals("+")) {
+        if (!imgPart.isEmpty()) {
+            imgPart = imgPart.replace("i", "");
+            if (imgPart.equals("+") || imgPart.isEmpty()) {
                 img = 1;
             }
-            else if (matcher.group(2).equals("-")) {
+            else if (imgPart.equals("-")) {
                 img = -1;
             }
             else {
-                img = Double.parseDouble(matcher.group(2));
+                img = Double.parseDouble(imgPart);
             }
-        }
-        if (matcher.group(1) == null && matcher.group(2) == null && matcher.group(3) == null) {
-            throw new ParseException(token, 0);
         }
         return new ComplexNumber(real, img);
     }

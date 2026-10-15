@@ -1,7 +1,7 @@
-package Matrix;
+package matrix;
 
-import Complex.ComplexArithmetic;
-import Complex.ComplexNumber;
+import complex.ComplexArithmetic;
+import complex.ComplexNumber;
 
 public class ComplexMatrix {
     private ComplexNumber[] matrix;
@@ -40,13 +40,22 @@ public class ComplexMatrix {
             return "()";
         }
         StringBuilder s = new StringBuilder();
+        var size = new int[this.size[1]];
         for (int i = 0; i < this.size[0]; ++i) {
             for (int j = 0; j < this.size[1]; ++j) {
-                s.append(this.get(i, j).toString()).append(" ");
+                if (this.get(i, j).toString().length() > size[j]) size[j] = this.get(i, j).toString().length();
             }
-            s.deleteCharAt(s.length()-1).append("%n".formatted());
         }
-        s.deleteCharAt(s.length()-1);
+        for (int i = 0; i < this.size[0]; ++i) {
+            for (int j = 0; j < this.size[1]; ++j) {
+                var el = this.get(i, j).toString();
+                var paddingL = (size[j]-el.length())/2;
+                var paddingR = size[j]-el.length()-paddingL;
+                s.repeat(" ", paddingL).append(el).repeat(" ", paddingR+1);
+            }
+            s.deleteCharAt(s.length()-1).append(System.lineSeparator());
+        }
+        s.delete(s.length()-System.lineSeparator().length(), s.length());
         return s.toString();
     }
 

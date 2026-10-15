@@ -1,4 +1,4 @@
-package Complex;
+package complex;
 
 import java.text.DecimalFormat;
 
